@@ -1,0 +1,80 @@
+services:
+
+  # ========================
+  #     STACK MING
+  # ========================
+
+  mqtt:
+    image: eclipse-mosquitto
+    container_name: d_mqtt
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf
+
+  nodered:
+    image: nodered/node-red
+    container_name: d_nodered
+    ports:
+      - "8082:1880"
+    volumes:
+      - ./nodered:/data
+    depends_on:
+      - mqtt
+      - influxdb
+
+  influxdb:
+    image: influxdb:2
+    container_name: d_influxdb
+    ports:
+      - "8083:8086"
+    volumes:
+      - influxdb-data:/var/lib/influxdb2
+
+  grafana:
+    image: grafana/grafana
+    container_name: d_grafana
+    ports:
+      - "8084:3000"
+    volumes:
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - influxdb
+
+
+  # ========================
+  #     STACK WEB
+  # ========================
+
+  backend:
+    build: ./backend
+    container_name: d_backend
+    ports:
+      - "8080:3000"
+    depends_on:
+      - mysql
+      - influxdb
+
+  frontend:
+    build: ./frontend
+    container_name: d_frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+
+  mysql:
+    image: mysql:8
+    container_name: d_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: iotdb
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+
+volumes:
+  influxdb-data:
+  grafana-data:
+  mysql-data:
