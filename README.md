@@ -174,15 +174,14 @@ on:
       - 'backend-*'
 
 jobs:
-
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout código da tag
+      - name: Checkout código
         uses: actions/checkout@v4
 
-      - name: Detectar tipo de deploy
+      - name: Detectar tipo
         id: detect
         run: |
           if [[ "${GITHUB_REF}" == refs/tags/frontend-* ]]; then
@@ -191,7 +190,7 @@ jobs:
             echo "type=backend" >> $GITHUB_OUTPUT
           fi
 
-      - name: Conectar na EC2 e fazer deploy
+      - name: Deploy via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -199,30 +198,38 @@ jobs:
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
 
-            cd SEU_REPO
+            echo "=== INICIANDO DEPLOY ==="
 
+            cd ~/StackMingWeb
+
+            echo "Atualizando código..."
             git fetch --all
+
+            echo "Checkout da tag..."
             git checkout $GITHUB_REF_NAME
 
-            if [ "${{ steps.detect.outputs.type }}" = "frontend" ]; then
-              echo "Deploy FRONTEND"
-              docker compose build frontend
-              docker compose up -d frontend
+            if [ "${{ steps.detect.outputs.type }}" = "backend" ]; then
+              echo "=== DEPLOY BACKEND ==="
+              docker-compose build backend
+              docker-compose up -d --build --force-recreate --no-deps backend
+
             else
-              echo "Deploy BACKEND"
-              docker compose build backend
-              docker compose up -d backend
+              echo "=== DEPLOY FRONTEND ==="
+              docker-compose build frontend
+              docker-compose up -d frontend --force-recreate --no-deps frontend
             fi
+
+            echo "=== DEPLOY FINALIZADO ==="
 ```
 
 
-# ETAPA 5 — PRIMEIRO DEPLOY
+# ETAPA 5 — DEPLOY
 
-## 1. Fazer alteração no frontend
+## 1. Fazer alteração no backend
 
 ```bash
 git add .
-git commit -m "update frontend"
+git commit -m "update backend"
 git push
 ```
 
@@ -231,13 +238,13 @@ git push
 ## 2. Criar release frontend
 
 ```bash
-git tag frontend-v1.0.1 $(git subtree split --prefix=frontend)
-git push origin frontend-v1.0.1
+git tag backend-v1.0.4
+git push origin backend-v1.0.4
 ```
 
 ---
 
-## 🔥 RESULTADO
+## RESULTADO
 
 Automaticamente:
 
@@ -246,69 +253,3 @@ Automaticamente:
 * faz checkout da tag
 * builda container
 * sobe serviço atualizado
-
----
-
-# 🌐 ACESSOS
-
-Depois do deploy:
-
-* Frontend → http://SEU_IP
-* Backend → http://SEU_IP:8080
-
----
-
-# 🧠 MELHORIAS (PRÓXIMO NÍVEL)
-
-Você pode evoluir isso para:
-
-### 🔹 zero downtime
-
-```bash
-docker compose up -d --no-deps --build frontend
-```
-
----
-
-### 🔹 usar registry (Docker Hub ou ECR)
-
-* build no GitHub
-* EC2 só faz pull
-
----
-
-### 🔹 usar Amazon ECR
-
-* mais profissional
-* melhor performance
-
----
-
-### 🔹 separar ambientes
-
-```text
-frontend-dev
-frontend-prod
-```
-
----
-
-# 💥 RESUMO FINAL
-
-✔ Monorepo mantido
-✔ Releases independentes (frontend/backend)
-✔ CI/CD automático
-✔ Deploy na EC2 via SSH
-✔ Escalável
-
----
-
-Se quiser, próximo passo eu posso te entregar:
-
-🔥 versão com:
-
-* Docker Hub ou Amazon ECR
-* deploy sem rebuild na EC2
-* pipeline profissional (build → push → deploy)
-
-Só falar: **“quero versão com registry”** 🚀
