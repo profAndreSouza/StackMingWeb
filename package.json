@@ -1,0 +1,10 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "main": "src/index.js",
+  "dependencies": {
+    "express": "^4",
+    "mysql2": "^3",
+    "@influxdata/influxdb-client": "^1"
+  }
+}
