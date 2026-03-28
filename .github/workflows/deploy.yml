@@ -1,0 +1,52 @@
+name: Deploy EC2
+
+on:
+  push:
+    tags:
+      - 'frontend-*'
+      - 'backend-*'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout código da tag
+        uses: actions/checkout@v4
+
+      - name: Detectar tipo (frontend/backend)
+        id: detect
+        run: |
+          if [[ "${GITHUB_REF}" == refs/tags/frontend-* ]]; then
+            echo "type=frontend" >> $GITHUB_OUTPUT
+          else
+            echo "type=backend" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Deploy na EC2 via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+
+            echo "Entrando no servidor..."
+
+            cd ~/StackMingWeb
+
+            echo "Atualizando repositório..."
+            git fetch --all
+            git checkout $GITHUB_REF_NAME
+
+            if [ "${{ steps.detect.outputs.type }}" = "frontend" ]; then
+              echo "Deploy FRONTEND"
+              docker compose build frontend
+              docker compose up -d frontend
+            else
+              echo "Deploy BACKEND"
+              docker compose build backend
+              docker compose up -d backend
+            fi
+
+            echo "Deploy finalizado!"
