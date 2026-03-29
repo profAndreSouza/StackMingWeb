@@ -35,20 +35,26 @@ Infra:
 
 ---
 
-## 2. Acessar via SSH
-
-```bash
-ssh ubuntu@SEU_IP
-```
-
----
-
 ## 3. Instalar Docker
 
 ```bash
 sudo apt update
-sudo apt install -y docker.io docker-compose
+sudo apt install -y ca-certificates curl gnupg
+
+sudo install -m 0755 -d /etc/apt/keyrings
+
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+
+sudo apt update
+
+sudo apt install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
 sudo usermod -aG docker ubuntu
+newgrp docker
+
+sudo systemctl start docker
+sudo systemctl enable docker
 ```
 
 
@@ -66,6 +72,7 @@ sudo docker-compose up -d --build
 Comandos uteis
 
 ``` bash
+df -h
 docker system prune -a -f --volumes
 docker system prune -a -f
 

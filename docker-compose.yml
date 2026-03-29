@@ -19,9 +19,6 @@ services:
       - "8082:1880"
     volumes:
       - ./nodered:/data
-    depends_on:
-      - mqtt
-      - influxdb
 
   influxdb:
     image: influxdb:2
@@ -38,8 +35,6 @@ services:
       - "8084:3000"
     volumes:
       - grafana-data:/var/lib/grafana
-    depends_on:
-      - influxdb
 
 
   # ========================
@@ -51,17 +46,12 @@ services:
     container_name: d_backend
     ports:
       - "8080:3000"
-    depends_on:
-      - mysql
-      - influxdb
 
   frontend:
     build: ./frontend
     container_name: d_frontend
     ports:
       - "80:80"
-    depends_on:
-      - backend
 
   mysql:
     image: mysql:8
